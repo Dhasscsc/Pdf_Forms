@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>படிவங்கள் – தாஸ் பொது சேவை மையம்</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#1b2333;--mu:#667085;--pr:#1d4ed8;--bd:#e0e5ef;--wa:#16a34a;--rd:#dc2626;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#192033;--tx:#e8ecf5;--mu:#9aa5bd;--pr:#6b97ff;--bd:#2a3550}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Noto Sans Tamil',system-ui,sans-serif;font-size:15px}
+header{background:var(--pr);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+main{max-width:900px;margin:0 auto;padding:12px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
+.bar input{flex:2;min-width:160px}.bar select{flex:1;min-width:120px}
+button{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;background:var(--pr);color:#fff}
+button.g{background:var(--wa)}button.r{background:var(--rd)}button.l{background:var(--bd);color:var(--tx)}
+header button{background:#fff;color:#1d4ed8}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.chip{display:inline-block;background:var(--bd);border-radius:20px;padding:2px 10px;font-size:12px;color:var(--mu)}
+.card h3{margin:6px 0 8px;font-size:16px}
+.docs{margin:8px 0;padding-left:18px;color:var(--mu);font-size:13px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.row button{flex:1;min-width:110px;font-size:13px}
+.empty{text-align:center;color:var(--mu);padding:30px}
+dialog{border:0;border-radius:14px;padding:16px;width:min(560px,94vw);background:var(--card);color:var(--tx)}
+dialog::backdrop{background:#0008}
+label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
+.fb{border:1px dashed var(--bd);border-radius:10px;padding:8px;margin-top:8px}
+.adm{display:none}body.admin .adm{display:inline-block}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:8px 16px;border-radius:20px;display:none;z-index:9}
+</style>
+</head>
+<body>
+<header>
+  <h1>📄 படிவங்கள் – தாஸ் பொது சேவை மையம்</h1>
+  <div>
+    <button id="admBtn" onclick="toggleAdmin()">🔐 நிர்வாகி</button>
+    <button class="adm" onclick="openEdit()">➕ புதிய சேவை</button>
+  </div>
+</header>
+<main>
+  <div class="bar">
+    <input id="q" placeholder="🔍 சேவை தேடுக..." oninput="render()">
+    <select id="fc" onchange="render()"></select>
+  </div>
+  <div class="bar adm">
+    <button class="l" onclick="cfg()">⚙️ GAS URL</button>
+    <button class="l" onclick="pull()">🔄 Sync</button>
+    <button class="l" onclick="exportJ()">⬇️ JSON ஏற்றுமதி</button>
+    <button class="l" onclick="document.getElementById('imp').click()">⬆️ JSON இறக்குமதி</button>
+    <input type="file" id="imp" accept=".json" hidden onchange="importJ(event)">
+  </div>
+  <div id="list" class="grid"></div>
+</main>
+
+<dialog id="dlg">
+  <h3 id="dt" style="margin:0">சேவை சேர்க்க</h3>
+  <label>சேவை வகை</label>
+  <input id="f_type" list="types" placeholder="எ.கா: ஆதார், பான், சான்றிதழ்">
+  <datalist id="types"></datalist>
+  <label>சேவையின் பெயர்</label>
+  <input id="f_name" placeholder="எ.கா: புதிய பான் கார்டு">
+  <div class="fb"><b>படிவம் 1</b>
+    <label>படிவத்தின் பெயர்</label><input id="n1" placeholder="படிவம் 1">
+    <label>PDF கோப்பு தேர்வு</label><input type="file" id="p1" accept="application/pdf">
+    <div id="c1" style="font-size:12px;color:var(--mu)"></div>
+    <label>அல்லது PDF லிங்க் (Drive போன்றவை)</label><input id="l1" placeholder="https://...">
+  </div>
+  <div class="fb"><b>படிவம் 2</b>
+    <label>படிவத்தின் பெயர்</label><input id="n2" placeholder="படிவம் 2">
+    <label>PDF கோப்பு தேர்வு</label><input type="file" id="p2" accept="application/pdf">
+    <div id="c2" style="font-size:12px;color:var(--mu)"></div>
+    <label>அல்லது PDF லிங்க்</label><input id="l2" placeholder="https://...">
+  </div>
+  <label>தேவையான ஆவணங்கள் (ஒரு வரிக்கு ஒன்று)</label>
+  <textarea id="f_docs" rows="5" placeholder="ஆதார் நகல்&#10;புகைப்படம்&#10;முகவரிச் சான்று"></textarea>
+  <div class="row" style="margin-top:12px">
+    <button onclick="save()">💾 சேமி</button>
+    <button class="l" onclick="dlg.close()">ரத்து</button>
+  </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let S=[],editId=null,keep={1:null,2:null};
+const WA_NUM='';// மையத்தின் எண் தேவையெனில் இங்கே
+const GAS_DEFAULT='https://script.google.com/macros/s/AKfycbywf7MCUJvwb-lA4ql3cyryTs4_0f3_pQSoZ-7D_TSJ0HqIOYk867WAF2cFMjJpwJOflA/exec';
+let GAS=GAS_DEFAULT,PIN='';
+try{GAS=localStorage.getItem('forms_gas')||GAS_DEFAULT}catch(e){}
+async function gpost(o){const r=await fetch(GAS,{method:'POST',body:JSON.stringify(o)});return r.json()}
+async function pull(quiet){
+  if(!GAS){if(!quiet)toast('முதலில் GAS URL கொடுக்கவும்');return}
+  try{const r=await (await fetch(GAS+'?action=list')).json();
+    if(!r.ok)throw 0;
+    if(r.services.length||!S.length){S=r.services;persist();render();if(!quiet)toast('Sync ✔')}
+    else if(isAdm())push();
+  }catch(e){if(!quiet)toast('Sync தோல்வி')}
+}
+async function push(){
+  if(!GAS)return;
+  try{const r=await gpost({action:'save',pin:PIN,services:S});toast(r.ok?'Cloud-ல் சேமிக்கப்பட்டது ☁️':(r.error||'சேவையகப் பிழை'))}
+  catch(e){toast('Cloud சேமிப்பு தோல்வி')}
+}
+function cfg(){const u=prompt('Apps Script Web App URL:',GAS);if(u===null)return;GAS=u.trim();try{localStorage.setItem('forms_gas',GAS)}catch(e){}pull()}
+/* ---------- IndexedDB (PDF கோப்புகள்) ---------- */
+let db;
+const idb=()=>new Promise((res,rej)=>{if(db)return res(db);const r=indexedDB.open('forms_tool',1);
+ r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)});
+const fPut=async(k,b)=>{const d=await idb();return new Promise(r=>{const t=d.transaction('files','readwrite');t.objectStore('files').put(b,k);t.oncomplete=r})};
+const fGet=async k=>{const d=await idb();return new Promise(r=>{const q=d.transaction('files').objectStore('files').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})};
+const fDel=async k=>{if(!k)return;const d=await idb();return new Promise(r=>{const t=d.transaction('files','readwrite');t.objectStore('files').delete(k);t.oncomplete=r})};
+/* ---------- Data ---------- */
+function load(){try{S=JSON.parse(localStorage.getItem('forms_svc')||'[]')}catch(e){S=[]}}
+function persist(){try{localStorage.setItem('forms_svc',JSON.stringify(S))}catch(e){}}
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+function toggleAdmin(){
+  if(!isAdm()&&GAS){const p=prompt('நிர்வாகி PIN:');if(p===null)return;PIN=p}
+  document.body.classList.toggle('admin');render();
+}
+const isAdm=()=>document.body.classList.contains('admin');
+/* ---------- Render ---------- */
+function render(){
+  const types=[...new Set(S.map(s=>s.type).filter(Boolean))];
+  const cur=$('fc').value;
+  $('fc').innerHTML='<option value="">அனைத்து வகைகளும்</option>'+types.map(t=>`<option ${t===cur?'selected':''}>${esc(t)}</option>`).join('');
+  $('types').innerHTML=types.map(t=>`<option value="${esc(t)}">`).join('');
+  const q=$('q').value.trim().toLowerCase(),fc=$('fc').value;
+  const rows=S.filter(s=>(!fc||s.type===fc)&&(!q||(s.name+s.type).toLowerCase().includes(q)));
+  $('list').innerHTML=rows.length?rows.map(card).join(''):'<div class="empty">சேவைகள் எதுவும் இல்லை</div>';
+}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function card(s){
+  const docs=(s.docs||'').split('\n').filter(x=>x.trim());
+  const fb=(k,f)=>f&&(f.fileId||f.link)?`<button onclick="dl('${s.id}',${k})">⬇️ ${esc(f.name||'படிவம் '+k)}</button>`:'';
+  return `<div class="card"><span class="chip">${esc(s.type)}</span><h3>${esc(s.name)}</h3>
+  ${docs.length?`<b style="font-size:13px">தேவையான ஆவணங்கள்:</b><ul class="docs">${docs.map(d=>`<li>${esc(d)}</li>`).join('')}</ul>`:''}
+  <div class="row">${fb(1,s.f1)}${fb(2,s.f2)}</div>
+  <div class="row"><button class="g" onclick="wa('${s.id}')">📲 WhatsApp அனுப்பு</button></div>
+  ${isAdm()?`<div class="row"><button class="l" onclick="openEdit('${s.id}')">✏️ திருத்து</button><button class="r" onclick="del('${s.id}')">🗑️ நீக்கு</button></div>`:''}</div>`;
+}
+/* ---------- Download / WhatsApp ---------- */
+async function dl(id,k){
+  const f=S.find(x=>x.id===id)['f'+k];
+  if(f.fileId){const b=await fGet(f.fileId);if(!b)return toast('கோப்பு இந்த சாதனத்தில் இல்லை');
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(f.name||'form')+'.pdf';a.click();}
+  else if(f.link)window.open(f.link,'_blank');
+}
+async function wa(id){
+  const s=S.find(x=>x.id===id);
+  let num=prompt('வாடிக்கையாளர் WhatsApp எண் (காலியாக விடலாம்):','')||'';
+  num=num.replace(/\D/g,'');if(num.length===10)num='91'+num;
+  const docs=(s.docs||'').split('\n').filter(x=>x.trim());
+  let t=`*${s.name}* (${s.type})\n`;
+  [1,2].forEach(k=>{const f=s['f'+k];if(f&&f.link)t+=`\n📄 ${f.name||'படிவம் '+k}: ${f.link}`});
+  if(docs.length)t+=`\n\n*தேவையான ஆவணங்கள்:*\n`+docs.map((d,i)=>`${i+1}. ${d}`).join('\n');
+  t+=`\n\n– தாஸ் பொது சேவை மையம், தூத்துக்குடி`;
+  const files=[];
+  for(const k of [1,2]){const f=s['f'+k];if(f&&f.fileId){const b=await fGet(f.fileId);if(b)files.push(new File([b],(f.name||'form')+'.pdf',{type:'application/pdf'}))}}
+  if(files.length&&navigator.canShare&&navigator.canShare({files})){
+    try{await navigator.share({files,text:t});return}catch(e){if(e.name==='AbortError')return}
+  }
+  window.open(`https://wa.me/${num||WA_NUM}?text=${encodeURIComponent(t)}`,'_blank');
+  if(files.length)toast('PDF-ஐ பதிவிறக்கி WhatsApp-ல் இணைக்கவும்');
+}
+/* ---------- Add / Edit ---------- */
+function openEdit(id){
+  editId=id||null;const s=id?S.find(x=>x.id===id):{};
+  $('dt').textContent=id?'சேவையைத் திருத்து':'சேவை சேர்க்க';
+  $('f_type').value=s.type||'';$('f_name').value=s.name||'';$('f_docs').value=s.docs||'';
+  [1,2].forEach(k=>{const f=s['f'+k]||{};keep[k]=f.fileId||null;
+    $('n'+k).value=f.name||'';$('l'+k).value=f.link||'';$('p'+k).value='';
+    $('c'+k).textContent=f.fileId?'✔ PDF சேமிக்கப்பட்டுள்ளது (புதியது தேர்ந்தால் மாறும்)':''});
+  dlg.showModal();
+}
+async function save(){
+  const type=$('f_type').value.trim(),name=$('f_name').value.trim();
+  if(!type||!name)return toast('சேவை வகை, பெயர் அவசியம்');
+  const id=editId||'s'+Date.now(),old=S.find(x=>x.id===id)||{};
+  const o={id,type,name,docs:$('f_docs').value};
+  for(const k of [1,2]){
+    let fileId=keep[k];const file=$('p'+k).files[0];
+    let link=$('l'+k).value.trim(),driveId=(old['f'+k]||{}).driveId||null;
+    if(file&&GAS){
+      toast('PDF பதிவேற்றப்படுகிறது...');
+      try{const r=await gpost({action:'upload',pin:PIN,name:($('n'+k).value.trim()||name)+'.pdf',data:await b64(file)});
+        if(!r.ok)throw 0;
+        if(driveId)gpost({action:'trash',pin:PIN,id:driveId});
+        link=r.url;driveId=r.id;fileId=null;
+      }catch(e){return toast('பதிவேற்றம் தோல்வி – PIN / URL சரிபார்க்கவும்')}
+    }else if(file){fileId='f'+id+'_'+k;await fPut(fileId,file)}
+    o['f'+k]={name:$('n'+k).value.trim(),link,fileId,driveId};
+  }
+  S=editId?S.map(x=>x.id===id?o:x):[...S,o];
+  persist();dlg.close();render();toast('சேமிக்கப்பட்டது ✔');push();
+}
+async function del(id){
+  if(!confirm('இந்த சேவையை நீக்கவா?'))return;
+  const s=S.find(x=>x.id===id);await fDel(s.f1&&s.f1.fileId);await fDel(s.f2&&s.f2.fileId);
+  if(GAS)[s.f1,s.f2].forEach(f=>f&&f.driveId&&gpost({action:'trash',pin:PIN,id:f.driveId}));
+  S=S.filter(x=>x.id!==id);persist();render();push();
+}
+/* ---------- Export / Import ---------- */
+const b64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function exportJ(){
+  const out=[];
+  for(const s of S){const c=JSON.parse(JSON.stringify(s));
+    for(const k of [1,2]){const f=c['f'+k];if(f&&f.fileId){const b=await fGet(f.fileId);f.data=b?await b64(b):null}}
+    out.push(c)}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'}));
+  a.download='forms_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+async function importJ(e){
+  const file=e.target.files[0];if(!file)return;
+  try{const arr=JSON.parse(await file.text());
+    for(const s of arr)for(const k of [1,2]){const f=s['f'+k];
+      if(f&&f.data){const b=await (await fetch(f.data)).blob();f.fileId='f'+s.id+'_'+k;await fPut(f.fileId,b)}delete (f||{}).data}
+    S=arr;persist();render();push();toast('இறக்குமதி முடிந்தது ✔')}catch(err){toast('கோப்பு தவறு')}
+  e.target.value='';
+}
+load();render();pull(true);
+</script>
+</body>
+</html>
