@@ -32,6 +32,23 @@ dialog::backdrop{background:#0008}
 label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
 .fb{border:1px dashed var(--bd);border-radius:10px;padding:8px;margin-top:8px}
 .adm{display:none}body.admin .adm{display:inline-block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.st{background:var(--card);border-radius:14px;padding:12px;text-align:center;border-left:5px solid var(--pr);box-shadow:0 2px 8px #0001}
+.st b{display:block;font-size:26px;margin:2px 0;color:var(--pr)}.st small{color:var(--mu)}
+.st.a{border-color:#16a34a}.st.a b{color:#16a34a}
+.st.o{border-color:#f59e0b}.st.o b{color:#f59e0b}
+.st.f{background:#1d4ed8;border-color:#f59e0b}.st.f,.st.f small{color:#fff}.st.f b{color:#fbbf24}
+.bar input{border-radius:20px}
+.tw{background:var(--card);border-radius:14px;overflow-x:auto;box-shadow:0 2px 8px #0001}
+.tw table{width:100%;border-collapse:collapse;min-width:760px}
+.tw th{background:#1f2328;color:#fff;padding:10px 8px;font-size:13px;text-align:center;border:1px solid #3a4048}
+.tw td{padding:8px;border:1px solid var(--bd);text-align:center;vertical-align:middle;font-size:14px}
+.tw tbody tr:hover td{background:var(--bg)}
+.tag{display:inline-block;background:var(--bd);color:var(--pr);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
+.fbtn{background:var(--bd);color:var(--pr);font-size:12px;padding:6px 10px;margin:2px}
+ol.dc{margin:0;padding-left:18px;text-align:left;font-size:13px}
+.ib{width:34px;height:34px;padding:0;margin:2px;font-size:15px}
+.ib.y{background:#fbbf24;color:#000}.ib.r2{background:#ef4444;color:#fff}.ib.w{background:#dcfce7;color:#16a34a}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:8px 16px;border-radius:20px;display:none;z-index:9}
 </style>
 </head>
@@ -44,6 +61,12 @@ label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
   </div>
 </header>
 <main>
+  <div class="stats">
+    <div class="st"><small>📋 மொத்த சேவைகள்</small><b id="s1">0</b><small>அனைத்தும்</small></div>
+    <div class="st a"><small>🗂️ சேவை வகைகள்</small><b id="s2">0</b><small>பிரிவுகள்</small></div>
+    <div class="st o"><small>📄 PDF படிவங்கள்</small><b id="s3">0</b><small>பதிவிறக்கம் உள்ளவை</small></div>
+    <div class="st f"><small>🔎 காட்டப்படுபவை</small><b id="s4">0</b><small>தற்போதைய பட்டியல்</small></div>
+  </div>
   <div class="bar">
     <input id="q" placeholder="🔍 சேவை தேடுக..." oninput="render()">
     <select id="fc" onchange="render()"></select>
@@ -55,7 +78,7 @@ label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
     <button class="l" onclick="document.getElementById('imp').click()">⬆️ JSON இறக்குமதி</button>
     <input type="file" id="imp" accept=".json" hidden onchange="importJ(event)">
   </div>
-  <div id="list" class="grid"></div>
+  <div id="list" class="tw"></div>
 </main>
 
 <dialog id="dlg">
@@ -137,7 +160,10 @@ function render(){
   $('types').innerHTML=types.map(t=>`<option value="${esc(t)}">`).join('');
   const q=$('q').value.trim().toLowerCase(),fc=$('fc').value;
   const rows=S.filter(s=>(!fc||s.type===fc)&&(!q||(s.name+s.type).toLowerCase().includes(q)));
-  $('list').innerHTML=rows.length?rows.map(card).join(''):'<div class="empty">சேவைகள் எதுவும் இல்லை</div>';
+  const fb=(s,k)=>{const f=s['f'+k];return f&&(f.fileId||f.link)?`<button class="fbtn" onclick="dl('${s.id}',${k})">⬇️ ${esc(f.name||'படிவம் '+k)}</button>`:'—'};
+  $('list').innerHTML=rows.length?'<table><thead><tr><th>#</th><th>சேவை வகை</th><th>சேவையின் பெயர்</th><th>படிவம் 1</th><th>படிவம் 2</th><th>தேவையான ஆவணங்கள்</th><th>செயல்கள்</th></tr></thead><tbody>'+rows.map((s,i)=>{const docs=(s.docs||'').split('\n').filter(x=>x.trim());return `<tr><td>${i+1}</td><td><span class="tag">${esc(s.type)}</span></td><td><b>${esc(s.name)}</b></td><td>${fb(s,1)}</td><td>${fb(s,2)}</td><td>${docs.length?'<ol class="dc">'+docs.map(d=>`<li>${esc(d)}</li>`).join('')+'</ol>':'—'}</td><td><button class="ib w" title="WhatsApp" onclick="wa('${s.id}')">📲</button><button class="ib y adm" onclick="openEdit('${s.id}')">✏️</button><button class="ib r2 adm" onclick="del('${s.id}')">🗑️</button></td></tr>`}).join('')+'</tbody></table>':'<div class="empty">சேவைகள் எதுவும் இல்லை</div>';
+  const cnt=S.reduce((n,s)=>n+[1,2].filter(k=>s['f'+k]&&(s['f'+k].fileId||s['f'+k].link)).length,0);
+  $('s1').textContent=S.length;$('s2').textContent=types.length;$('s3').textContent=cnt;$('s4').textContent=rows.length;
 }
 function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function card(s){
