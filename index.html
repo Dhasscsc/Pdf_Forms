@@ -119,8 +119,13 @@ const fDel=async k=>{if(!k)return;const d=await idb();return new Promise(r=>{con
 function load(){try{S=JSON.parse(localStorage.getItem('forms_svc')||'[]')}catch(e){S=[]}}
 function persist(){try{localStorage.setItem('forms_svc',JSON.stringify(S))}catch(e){}}
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
-function toggleAdmin(){
-  if(!isAdm()&&GAS){const p=prompt('நிர்வாகி PIN:');if(p===null)return;PIN=p}
+async function toggleAdmin(){
+  if(!isAdm()&&GAS){
+    const p=prompt('நிர்வாகி PIN:');if(p===null)return;
+    try{const r=await gpost({action:'auth',pin:p});if(!r.ok)return toast('PIN தவறு ❌')}
+    catch(e){return toast('சேவையகத் தொடர்பு தோல்வி')}
+    PIN=p;
+  }else if(isAdm()){PIN=''}
   document.body.classList.toggle('admin');render();
 }
 const isAdm=()=>document.body.classList.contains('admin');
